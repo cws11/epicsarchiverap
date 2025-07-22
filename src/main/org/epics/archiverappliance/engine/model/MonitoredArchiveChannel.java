@@ -66,18 +66,16 @@ public class MonitoredArchiveChannel extends ArchiveChannel {
 	@Override
 	protected boolean handleNewValue(final DBRTimeEvent timeevent) {
 		try {
-			if (super.handleNewValue(timeevent)) {
-
+			DBRTimeEvent validEvent = getEventWithValidTimestamp(timeevent);
+			if (super.handleNewValue(validEvent)) {
 				return true;
 			}
+
+			addValueToBuffer(validEvent);
+			return true;
 		} catch (Exception e) {
 			logger.error("exception in handleNewValue for pv" + this.getName(), e);
 		}
-		try {
-			addValueToBuffer(timeevent);
-		} catch (Exception e) {
-			logger.error("exception in handleNewValue for pv " + this.getName(), e);
-		}
-		return true;
+		return false;
 	}
 }

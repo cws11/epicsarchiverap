@@ -16,6 +16,7 @@ package org.epics.archiverappliance.engine.model;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.epics.archiverappliance.Writer;
+import org.epics.archiverappliance.common.POJOEvent;
 import org.epics.archiverappliance.common.TimeUtils;
 import org.epics.archiverappliance.config.ArchDBRTypes;
 import org.epics.archiverappliance.config.ConfigService;
@@ -525,6 +526,46 @@ public abstract class ArchiveChannel {
     }
 
     /**
+     * This function is checked timestamp and if invalidation, return new event obejcet with
+     * changed current server timestamp.
+     */
+    public DBRTimeEvent getEventWithValidTimestamp(final DBRTimeEvent timeevent){
+        if(timeevent == null)
+            return null;
+        try{
+            if(isfutureorpastOrSame(timeevent)){
+                if(!isSameTimeStamp(timeevent)){
+                    Instant correctTimestamp = Instant.now();
+
+                    POJOEvent pojoEvent =  new POJOEvent(
+                            timeevent.getDBRType(),
+                            correctTimestamp,
+                            timeevent.getSampleValue(),
+                            timeevent.getStatus(),
+                            timeevent.getSeverity()
+                    );
+
+                    return (DBRTimeEvent) pojoEvent.makeClone();
+                }
+                return timeevent;
+            }
+        } catch (IllegalArgumentException ex){
+            Instant correctTimestamp = Instant.now();
+            POJOEvent pojoEvent =  new POJOEvent(
+                    timeevent.getDBRType(),
+                    correctTimestamp,
+                    timeevent.getSampleValue(),
+                    timeevent.getStatus(),
+                    timeevent.getSeverity()
+            );
+
+            return (DBRTimeEvent) pojoEvent.makeClone();
+        }
+
+        return timeevent;
+    }
+
+    /**
      * Add given sample to buffer, performing a back-in-time check, updating the sample buffer error state.
      *
      * @param timeevent DBRTimeEvent
@@ -548,7 +589,6 @@ public abstract class ArchiveChannel {
                     // processed since the last event we picked up.
                     this.pvMetrics.resetConnectionLastLostEpochSeconds();
                 }
-
                 return;
             }
         } catch (IllegalArgumentException ex) {

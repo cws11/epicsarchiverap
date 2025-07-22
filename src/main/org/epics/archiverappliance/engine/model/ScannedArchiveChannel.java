@@ -81,7 +81,8 @@ public class ScannedArchiveChannel extends ArchiveChannel implements Runnable {
 			this.pvMetrics.incrementScanRawEventCount();
 			this.serverTimeForStragglingScanValuesMillis = -1;
 			try {
-				if (super.handleNewValue(timeevent)) {
+				DBRTimeEvent validEvent = getEventWithValidTimestamp(timeevent);
+				if (super.handleNewValue(validEvent)) {
 					return true;
 				}
 			} catch (Exception e) {
